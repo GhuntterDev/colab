@@ -21,21 +21,29 @@ pip install -r requirements.txt
 
 ### 2. Configurar credenciais do Google Sheets
 
-Crie um arquivo `.streamlit/secrets.toml` com suas credenciais:
+**📋 Instruções detalhadas**: Consulte o arquivo `CONFIGURAR_CREDENCIAIS.md`
+
+1. **Baixe o arquivo JSON** de credenciais do Google Cloud Console
+2. **Crie o arquivo** `.streamlit/secrets.toml` com suas credenciais:
 
 ```toml
 [gcp_service_account]
 type = "service_account"
 project_id = "seu-projeto"
 private_key_id = "sua-chave-privada-id"
-private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+private_key = '''-----BEGIN PRIVATE KEY-----
+SUA_CHAVE_PRIVADA_COMPLETA_AQUI
+-----END PRIVATE KEY-----'''
 client_email = "sua-service-account@seu-projeto.iam.gserviceaccount.com"
 client_id = "seu-client-id"
 auth_uri = "https://accounts.google.com/o/oauth2/auth"
 token_uri = "https://oauth2.googleapis.com/token"
 auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
 client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/sua-service-account%40seu-projeto.iam.gserviceaccount.com"
+universe_domain = "googleapis.com"
 ```
+
+3. **Compartilhe a planilha** com a service account (permissão de Editor)
 
 ### 3. Executar a aplicação
 
