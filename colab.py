@@ -203,23 +203,37 @@ def _open_sheet_by_id(maybe_url_or_id: str):
         _log(f"❌ Tipo do erro: {type(e).__name__}")
         raise
 
+@st.cache_data(ttl=300)  # Cache por 5 minutos
 def _fetch_from_gsheets(spreadsheet_id: str) -> List[Tuple[str, pd.DataFrame]]:
-    sh = _open_sheet_by_id(spreadsheet_id)
-    ws_list = sh.worksheets()
-    _log(f"📑 {sh.title}: {len(ws_list)} aba(s) detectadas")
-    dfs: List[Tuple[str, pd.DataFrame]] = []
-    for ws in ws_list:
-        _log(f"➡️ Lendo aba: {ws.title}")
-        values = ws.get_all_values()
-        if not values:
-            _log("   (vazia)")
-            continue
-        if len(values) >= 2:
-            df = pd.DataFrame(values[1:], columns=values[0])
-        else:
-            df = pd.DataFrame(values)
-        dfs.append((ws.title, df))
-    return dfs
+    import time
+    try:
+        sh = _open_sheet_by_id(spreadsheet_id)
+        ws_list = sh.worksheets()
+        _log(f"📑 {sh.title}: {len(ws_list)} aba(s) detectadas")
+        dfs: List[Tuple[str, pd.DataFrame]] = []
+        
+        for i, ws in enumerate(ws_list):
+            _log(f"➡️ Lendo aba: {ws.title}")
+            
+            # Pequena pausa entre requisições para evitar quota
+            if i > 0:
+                time.sleep(0.5)
+            
+            values = ws.get_all_values()
+            if not values:
+                _log("   (vazia)")
+                continue
+            if len(values) >= 2:
+                df = pd.DataFrame(values[1:], columns=values[0])
+            else:
+                df = pd.DataFrame(values)
+            dfs.append((ws.title, df))
+        return dfs
+    except Exception as e:
+        if "429" in str(e) or "quota" in str(e).lower():
+            st.warning("⚠️ Limite de requisições da API excedido. Aguarde alguns minutos e tente novamente.")
+            st.info("💡 Dica: O cache foi ativado para reduzir requisições.")
+        raise
 
 
 st.sidebar.header("Configurações")
@@ -231,7 +245,15 @@ frames: List[pd.DataFrame] = []
 spreadsheet_in = SPREADSHEET_URL
 _log(f"🚀 Iniciando carregamento de dados...")
 _log(f"🔗 URL da planilha: {SPREADSHEET_URL}")
-st.sidebar.button("↻ Atualizar agora", on_click=st.cache_data.clear)
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("↻ Atualizar", help="Atualiza os dados da planilha"):
+        st.cache_data.clear()
+        st.rerun()
+with col2:
+    if st.button("⏰ Cache", help="Limpa o cache (use se dados não atualizaram)"):
+        st.cache_data.clear()
+        st.success("Cache limpo!")
 if spreadsheet_in:
         try:
             _log("📊 Tentando buscar dados do Google Sheets...")
