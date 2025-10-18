@@ -43,7 +43,10 @@ client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/sua-se
 universe_domain = "googleapis.com"
 ```
 
-3. **Compartilhe a planilha** com a service account (permissão de Editor)
+3. **Compartilhe a planilha** com a service account:
+   - Email: `ghuntter@uplifted-water-472222-k7.iam.gserviceaccount.com`
+   - Permissão: **Editor** (recomendado) ou **Leitor**
+   - ⚠️ **IMPORTANTE**: Se aparecer erro de permissão, consulte `SOLUCAO_PERMISSAO.md`
 
 ### 3. Executar a aplicação
 

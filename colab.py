@@ -16,10 +16,11 @@ from gspread.exceptions import APIError
 # CONFIG & DEBUG
 # ---------------------------------
 st.set_page_config(page_title="Avaliação de Colaboradores", layout="wide")
-DEBUG_LOGS = False  # mude para True para ver logs
+DEBUG_LOGS = True  # Ativado para debug
 def _log(msg):
     if DEBUG_LOGS:
-        st.write(msg)
+        st.write(f"🔍 DEBUG: {msg}")
+        print(f"DEBUG: {msg}")  # Também no console
 
 # Adicionado mapeamento de lojas por região
 MAPEAMENTO_REGIOES = {
@@ -115,42 +116,69 @@ def _normalize_sheet_id(maybe_url_or_id: str) -> str:
     return m.group(1) if m else s
 
 def _load_sa_creds_from_secrets() -> dict:
+    _log("🔑 Tentando carregar credenciais do secrets.toml...")
     try:
         creds = dict(st.secrets["gcp_service_account"])
-    except Exception:
+        _log(f"✅ Seção [gcp_service_account] encontrada")
+        _log(f"📧 Service Account: {creds.get('client_email', 'NÃO ENCONTRADO')}")
+    except Exception as e:
+        _log(f"❌ Erro ao carregar secrets: {e}")
         raise RuntimeError("Seção [gcp_service_account] não encontrada em .streamlit/secrets.toml")
+    
     # corrige chave salva com \n literal (duas barras) -> quebra real
     pk = creds.get("private_key", "")
     if "\\n" in pk and "\n" not in pk:
+        _log("🔧 Corrigindo formatação da chave privada...")
         creds["private_key"] = pk.replace("\\n", "\n")
+    
     missing = [k for k in REQUIRED_GCP_FIELDS if k not in creds or not str(creds[k]).strip()]
     if missing:
         present = sorted(creds.keys())
+        _log(f"❌ Credenciais incompletas. Faltando: {missing}")
+        _log(f"📋 Campos presentes: {present}")
         raise RuntimeError(f"Credenciais incompletas. Faltando: {missing}. Presentes: {present}.")
+    
+    _log("✅ Credenciais validadas com sucesso")
     return creds
 
 def _open_sheet_by_id(maybe_url_or_id: str):
     import gspread
+    _log(f"🔗 URL/ID recebido: {maybe_url_or_id}")
     sid = _normalize_sheet_id(maybe_url_or_id)
     _log(f"🔎 ID normalizado: `{sid}`")
+    
     creds = _load_sa_creds_from_secrets()
     _log(f"📧 Service account: {creds.get('client_email')}")
-    gc = gspread.service_account_from_dict(creds)
+    
+    _log("🔌 Conectando ao Google Sheets API...")
+    try:
+        gc = gspread.service_account_from_dict(creds)
+        _log("✅ Conectado ao Google Sheets API")
+    except Exception as e:
+        _log(f"❌ Erro ao conectar com Google Sheets API: {e}")
+        raise
+    
+    _log(f"📋 Tentando abrir planilha com ID: {sid}")
     try:
         sh = gc.open_by_key(sid)
-        _log("✅ Planilha aberta.")
+        _log(f"✅ Planilha aberta: {sh.title}")
         return sh
     except APIError as e:
         msg = str(e)
+        _log(f"❌ APIError ao abrir planilha: {msg}")
         if "404" in msg:
-            raise RuntimeError(
-                "Planilha não encontrada (404). Verifique ID (trecho entre /d/ e /edit) e "
-                "se a planilha foi compartilhada com a service account (Leitor)."
-            )
+            error_msg = "Planilha não encontrada (404). Verifique ID (trecho entre /d/ e /edit) e se a planilha foi compartilhada com a service account (Leitor)."
+            _log(f"❌ {error_msg}")
+            raise RuntimeError(error_msg)
         if "403" in msg:
-            raise RuntimeError(
-                "Sem permissão (403). Compartilhe a planilha com a service account como Leitor."
-            )
+            error_msg = "Sem permissão (403). Compartilhe a planilha com a service account como Leitor."
+            _log(f"❌ {error_msg}")
+            raise RuntimeError(error_msg)
+        _log(f"❌ Erro não tratado: {msg}")
+        raise
+    except Exception as e:
+        _log(f"❌ Erro inesperado ao abrir planilha: {e}")
+        _log(f"❌ Tipo do erro: {type(e).__name__}")
         raise
 
 def _fetch_from_gsheets(spreadsheet_id: str) -> List[Tuple[str, pd.DataFrame]]:
@@ -179,9 +207,12 @@ frames: List[pd.DataFrame] = []
 
 # Sempre usar Google Sheets com o link padrão
 spreadsheet_in = SPREADSHEET_URL
+_log(f"🚀 Iniciando carregamento de dados...")
+_log(f"🔗 URL da planilha: {SPREADSHEET_URL}")
 st.sidebar.button("↻ Atualizar agora", on_click=st.cache_data.clear)
 if spreadsheet_in:
         try:
+            _log("📊 Tentando buscar dados do Google Sheets...")
             sheets = _fetch_from_gsheets(spreadsheet_in)
             for title, df in sheets:
                 df = normalize_colnames(df)
@@ -233,7 +264,13 @@ if spreadsheet_in:
                 rec["Região"] = rec["Loja"].apply(get_regiao)
                 frames.append(rec)
         except Exception as e:
+            _log(f"❌ ERRO CAPTURADO: {e}")
+            _log(f"❌ Tipo do erro: {type(e).__name__}")
             st.error(f"Erro ao carregar Google Sheets: {e}")
+            st.error(f"Tipo do erro: {type(e).__name__}")
+            # Mostrar mais detalhes do erro
+            import traceback
+            _log(f"❌ Traceback completo: {traceback.format_exc()}")
 
 
 if not frames:
