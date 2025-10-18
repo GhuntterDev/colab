@@ -339,8 +339,17 @@ if date_min == date_max:
     d_ini = st.sidebar.date_input("Data", value=date_min, min_value=date_min, max_value=date_max)
     d_fim = d_ini
 else:
-    # Se há período, usar range
-    d_ini, d_fim = st.sidebar.date_input("Período", value=(date_min, date_max), min_value=date_min, max_value=date_max)
+    # Se há período, usar range - com tratamento para evitar erro de unpacking
+    date_range = st.sidebar.date_input("Período", value=(date_min, date_max), min_value=date_min, max_value=date_max)
+    
+    # Tratar caso onde apenas uma data é selecionada
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        d_ini, d_fim = date_range
+    elif isinstance(date_range, tuple) and len(date_range) == 1:
+        d_ini = d_fim = date_range[0]
+    else:
+        # Se date_range é uma única data
+        d_ini = d_fim = date_range
 st.sidebar.caption("💡 Dica: Selecione uma data para ver apenas esse dia, ou duas datas para ver o período.")
 
 regiao_sel = st.sidebar.selectbox("Filtrar por região", options=["Todos", "SP", "RJ"], index=0)
