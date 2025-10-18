@@ -333,7 +333,14 @@ else:
     date_min = date_max = today
 
 st.sidebar.subheader("Filtros")
-d_ini, d_fim = st.sidebar.date_input("Período", value=(date_min, date_max), min_value=date_min, max_value=date_max)
+# Corrigir problema quando date_min == date_max
+if date_min == date_max:
+    # Se há apenas uma data, usar apenas essa data
+    d_ini = st.sidebar.date_input("Data", value=date_min, min_value=date_min, max_value=date_max)
+    d_fim = d_ini
+else:
+    # Se há período, usar range
+    d_ini, d_fim = st.sidebar.date_input("Período", value=(date_min, date_max), min_value=date_min, max_value=date_max)
 st.sidebar.caption("💡 Dica: Selecione uma data para ver apenas esse dia, ou duas datas para ver o período.")
 
 regiao_sel = st.sidebar.selectbox("Filtrar por região", options=["Todos", "SP", "RJ"], index=0)
