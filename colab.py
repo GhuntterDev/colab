@@ -16,7 +16,7 @@ from gspread.exceptions import APIError
 # CONFIG & DEBUG
 # ---------------------------------
 st.set_page_config(page_title="Avaliação de Colaboradores", layout="wide")
-DEBUG_LOGS = True  # Ativado para debug
+DEBUG_LOGS = False  # Desativado - sistema funcionando
 def _log(msg):
     if DEBUG_LOGS:
         st.write(f"🔍 DEBUG: {msg}")
