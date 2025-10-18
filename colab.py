@@ -20,7 +20,29 @@ DEBUG_LOGS = True  # Ativado para debug
 def _log(msg):
     if DEBUG_LOGS:
         st.write(f"🔍 DEBUG: {msg}")
-        print(f"DEBUG: {msg}")  # Também no console
+        # Remove emojis para o console do Windows
+        console_msg = msg
+        # Remove emojis comuns
+        emoji_map = {
+            "🚀": "[INICIO]",
+            "🔗": "[URL]",
+            "📊": "[DADOS]",
+            "🔑": "[CRED]",
+            "✅": "[OK]",
+            "❌": "[ERRO]",
+            "🔎": "[ID]",
+            "📧": "[EMAIL]",
+            "🔌": "[CONEXAO]",
+            "📋": "[PLANILHA]",
+            "🔧": "[CORRECAO]",
+            "📑": "[ABAS]",
+            "➡️": "[LENDO]",
+            "🗺️": "[REGIAO]",
+            "🔍": "[DEBUG]"
+        }
+        for emoji, replacement in emoji_map.items():
+            console_msg = console_msg.replace(emoji, replacement)
+        print(f"DEBUG: {console_msg}")  # Console sem emojis
 
 # Adicionado mapeamento de lojas por região
 MAPEAMENTO_REGIOES = {
