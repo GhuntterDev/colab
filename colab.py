@@ -138,30 +138,49 @@ def _normalize_sheet_id(maybe_url_or_id: str) -> str:
     return m.group(1) if m else s
 
 def _load_sa_creds_from_secrets() -> dict:
-    _log("🔑 Tentando carregar credenciais do secrets.toml...")
+    _log("🔑 Tentando carregar credenciais...")
+    
+    # Primeiro, tentar carregar do arquivo JSON
+    try:
+        import json
+        import os
+        json_path = "service_account.json"
+        if os.path.exists(json_path):
+            _log("📄 Carregando credenciais do arquivo JSON...")
+            with open(json_path, 'r') as f:
+                creds = json.load(f)
+            _log(f"✅ Arquivo JSON carregado com sucesso")
+            _log(f"📧 Service Account: {creds.get('client_email', 'NÃO ENCONTRADO')}")
+            return creds
+    except Exception as e:
+        _log(f"❌ Erro ao carregar arquivo JSON: {e}")
+    
+    # Se não conseguir carregar do JSON, tentar do secrets.toml
+    _log("📄 Tentando carregar credenciais do secrets.toml...")
     try:
         creds = dict(st.secrets["gcp_service_account"])
         _log(f"✅ Seção [gcp_service_account] encontrada")
         _log(f"📧 Service Account: {creds.get('client_email', 'NÃO ENCONTRADO')}")
+        
+        # corrige chave salva com \n literal (duas barras) -> quebra real
+        pk = creds.get("private_key", "")
+        if "\\n" in pk and "\n" not in pk:
+            _log("🔧 Corrigindo formatação da chave privada...")
+            creds["private_key"] = pk.replace("\\n", "\n")
+        
+        missing = [k for k in REQUIRED_GCP_FIELDS if k not in creds or not str(creds[k]).strip()]
+        if missing:
+            present = sorted(creds.keys())
+            _log(f"❌ Credenciais incompletas. Faltando: {missing}")
+            _log(f"📋 Campos presentes: {present}")
+            raise RuntimeError(f"Credenciais incompletas. Faltando: {missing}. Presentes: {present}.")
+        
+        _log("✅ Credenciais do secrets.toml validadas com sucesso")
+        return creds
+        
     except Exception as e:
         _log(f"❌ Erro ao carregar secrets: {e}")
-        raise RuntimeError("Seção [gcp_service_account] não encontrada em .streamlit/secrets.toml")
-    
-    # corrige chave salva com \n literal (duas barras) -> quebra real
-    pk = creds.get("private_key", "")
-    if "\\n" in pk and "\n" not in pk:
-        _log("🔧 Corrigindo formatação da chave privada...")
-        creds["private_key"] = pk.replace("\\n", "\n")
-    
-    missing = [k for k in REQUIRED_GCP_FIELDS if k not in creds or not str(creds[k]).strip()]
-    if missing:
-        present = sorted(creds.keys())
-        _log(f"❌ Credenciais incompletas. Faltando: {missing}")
-        _log(f"📋 Campos presentes: {present}")
-        raise RuntimeError(f"Credenciais incompletas. Faltando: {missing}. Presentes: {present}.")
-    
-    _log("✅ Credenciais validadas com sucesso")
-    return creds
+        raise RuntimeError("Não foi possível carregar credenciais nem do arquivo JSON nem do secrets.toml")
 
 def _open_sheet_by_id(maybe_url_or_id: str):
     import gspread
