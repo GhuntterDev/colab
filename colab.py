@@ -334,6 +334,7 @@ else:
 
 st.sidebar.subheader("Filtros")
 d_ini, d_fim = st.sidebar.date_input("Período", value=(date_min, date_max), min_value=date_min, max_value=date_max)
+st.sidebar.caption("💡 Dica: Selecione uma data para ver apenas esse dia, ou duas datas para ver o período.")
 
 regiao_sel = st.sidebar.selectbox("Filtrar por região", options=["Todos", "SP", "RJ"], index=0)
 
@@ -363,10 +364,19 @@ setores_sel = st.sidebar.multiselect("Filtrar por setor",
 hora_ini, hora_fim = st.sidebar.slider("Faixa de hora do dia", min_value=0, max_value=23, value=(0, 23), step=1)
 
 mask = pd.Series(True, index=data.index)
+# Filtro de data - aceita uma data ou período
 if d_ini and d_fim:
-    mask &= data["Data"].between(pd.to_datetime(d_ini),
-                                 pd.to_datetime(d_fim) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1),
-                                 inclusive="both")
+    if d_ini == d_fim:
+        # Se apenas uma data foi selecionada, filtrar apenas essa data
+        mask &= data["Data"].dt.date == d_ini
+    else:
+        # Se período foi selecionado, filtrar o período
+        mask &= data["Data"].between(pd.to_datetime(d_ini),
+                                     pd.to_datetime(d_fim) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1),
+                                     inclusive="both")
+elif d_ini:
+    # Se apenas data inicial foi selecionada
+    mask &= data["Data"].dt.date == d_ini
 if regiao_sel != "Todos":
     mask &= data["Região"] == regiao_sel
 if lojas_sel:
