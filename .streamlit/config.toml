@@ -1,0 +1,22 @@
+[server]
+# Configurações para melhor experiência mobile
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+# Configurações do navegador para mobile
+gatherUsageStats = false
+
+[theme]
+# Tema otimizado para mobile
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[client]
+# Configurações do cliente
+showErrorDetails = true
+toolbarMode = "minimal"

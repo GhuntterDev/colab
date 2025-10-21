@@ -18,11 +18,27 @@ from auth import (
     show_logout_button, filter_data_by_user_access
 )
 
+# Importar utilitários mobile
+from mobile_utils import (
+    detect_mobile, get_mobile_config, apply_mobile_styles,
+    create_mobile_metrics, create_mobile_filters, optimize_dataframe_for_mobile
+)
+
 # ---------------------------------
 # CONFIG & DEBUG
 # ---------------------------------
 st.set_page_config(page_title="Avaliação de Colaboradores", layout="wide")
 DEBUG_LOGS = False  # Desativado - sistema funcionando
+
+# ---------------------------------
+# OTIMIZAÇÕES MOBILE
+# ---------------------------------
+# Detectar dispositivo mobile
+is_mobile = detect_mobile()
+mobile_config = get_mobile_config()
+
+# Aplicar estilos mobile
+apply_mobile_styles()
 
 # ---------------------------------
 # SISTEMA DE AUTENTICAÇÃO
@@ -440,22 +456,31 @@ st.title("📊 Avaliação de Colaboradores")
 user_info = f"👤 **Usuário:** {current_user['name']} | **Tipo:** {'Administrador' if current_user['role'] == 'admin' else 'Loja'}"
 if current_user['role'] == 'store':
     user_info += f" | **Loja:** {current_user['access_level']}"
+
+# Indicador mobile
+if is_mobile:
+    user_info += " | 📱 **Mobile**"
+    
 st.info(user_info)
 
-# KPIs
-col1, col2, col3, col4, col5 = st.columns(5)
-with col1: st.metric("Avaliações (linhas)", int(df_f.shape[0]))
-with col2: st.metric("Média Velocidade", round(df_f["Velocidade"].mean() if len(df_f) else 0, 2))
-with col3: st.metric("Média Atendimento", round(df_f["Atendimento"].mean() if len(df_f) else 0, 2))
-with col4: st.metric("Média Qualidade", round(df_f["Qualidade"].mean() if len(df_f) else 0, 2))
-with col5: st.metric("Média Ajuda", round(df_f["Ajuda"].mean() if len(df_f) else 0, 2))
+# KPIs - Otimizado para mobile
+if is_mobile:
+    create_mobile_metrics(df_f, cols=1)
+else:
+    create_mobile_metrics(df_f, cols=5)
 
-# Prévia
-# Adicionando coluna Região na prévia
+# Prévia - Otimizada para mobile
 cols_preview = [c for c in ["Data_dia", "Hora", "Região", "Loja", "Setor", "Colaborador", "Avaliador",
                             "Velocidade", "Atendimento", "Qualidade", "Ajuda"] if c in df_f.columns]
+
 st.markdown("### 🔎 Prévia dos dados filtrados")
-st.dataframe(df_f.sort_values(["Data_dia","Hora"], ascending=False)[cols_preview], use_container_width=True)
+
+# Otimizar dataframe para mobile
+df_preview = df_f.sort_values(["Data_dia","Hora"], ascending=False)[cols_preview]
+if is_mobile:
+    df_preview = optimize_dataframe_for_mobile(df_preview, max_rows=50)
+
+st.dataframe(df_preview, use_container_width=True)
 
 st.markdown("---")
 st.subheader("👤 Resumo por Pessoa")
