@@ -12,11 +12,31 @@ import pandas as pd
 import streamlit as st
 from gspread.exceptions import APIError
 
+# Importar sistema de autenticação
+from auth import (
+    is_authenticated, get_current_user, show_login_form, 
+    show_logout_button, filter_data_by_user_access
+)
+
 # ---------------------------------
 # CONFIG & DEBUG
 # ---------------------------------
 st.set_page_config(page_title="Avaliação de Colaboradores", layout="wide")
 DEBUG_LOGS = False  # Desativado - sistema funcionando
+
+# ---------------------------------
+# SISTEMA DE AUTENTICAÇÃO
+# ---------------------------------
+# Verificar se o usuário está autenticado
+if not is_authenticated():
+    show_login_form()
+    st.stop()
+
+# Mostrar botão de logout na sidebar
+show_logout_button()
+
+# Obter dados do usuário atual
+current_user = get_current_user()
 def _log(msg):
     if DEBUG_LOGS:
         st.write(f"🔍 DEBUG: {msg}")
@@ -324,6 +344,9 @@ if not frames:
 
 data = pd.concat(frames, ignore_index=True)
 
+# Filtrar dados baseado no acesso do usuário
+data = filter_data_by_user_access(data, current_user)
+
 # limites de data
 if data["Data"].notna().any():
     date_min = pd.to_datetime(data["Data"].min()).date()
@@ -405,6 +428,12 @@ if "Hora_num" in data.columns:
 df_f = data.loc[mask].copy()
 
 st.title("📊 Avaliação de Colaboradores")
+
+# Mostrar informações do usuário logado
+user_info = f"👤 **Usuário:** {current_user['name']} | **Tipo:** {'Administrador' if current_user['role'] == 'admin' else 'Loja'}"
+if current_user['role'] == 'store':
+    user_info += f" | **Loja:** {current_user['access_level']}"
+st.info(user_info)
 
 # KPIs
 col1, col2, col3, col4, col5 = st.columns(5)

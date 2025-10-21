@@ -85,3 +85,4 @@ streamlit run colab.py
 - **NUNCA** commite o arquivo `secrets.toml` com credenciais reais
 - O arquivo está protegido pelo `.gitignore`
 - Use sempre o arquivo de exemplo para referência
+
