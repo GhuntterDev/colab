@@ -180,17 +180,6 @@ def show_login_form():
                 st.error("❌ Usuário ou senha incorretos")
                 return False
     
-    # Informações sobre os usuários disponíveis
-    with st.expander("ℹ️ Usuários disponíveis"):
-        st.markdown("""
-        **Usuários Administrativos (acesso a todas as lojas):**
-        - GhtDev
-        - Monitoramento
-        
-        **Usuários de Loja (acesso restrito):**
-        - Carioca, Santa Cruz, Mesquita, Nilópolis, Madureira, Bonsucesso
-        - Taboão, São Bernardo, Santo André, Mauá, MDC São Mateus, CDM São Mateus
-        """)
 
 def show_logout_button():
     """Exibe botão de logout na sidebar"""
