@@ -375,25 +375,32 @@ else:
         d_ini = d_fim = date_range
 st.sidebar.caption("💡 Dica: Selecione uma data para ver apenas esse dia, ou duas datas para ver o período.")
 
-regiao_sel = st.sidebar.selectbox("Filtrar por região", options=["Todos", "SP", "RJ"], index=0)
+# Filtros de região e loja só aparecem para administradores
+if current_user['role'] == 'admin':
+    regiao_sel = st.sidebar.selectbox("Filtrar por região", options=["Todos", "SP", "RJ"], index=0)
 
-# Selectbox para ver loja específica
-loja_especifica = st.sidebar.selectbox(
-    "Ver loja específica",
-    options=["Todas as lojas"] + sorted([x for x in data["Loja"].dropna().unique()]),
-    index=0,
-    help="Selecione uma loja para visualizar apenas ela, ou 'Todas as lojas' para usar o filtro múltiplo abaixo"
-)
+    # Selectbox para ver loja específica
+    loja_especifica = st.sidebar.selectbox(
+        "Ver loja específica",
+        options=["Todas as lojas"] + sorted([x for x in data["Loja"].dropna().unique()]),
+        index=0,
+        help="Selecione uma loja para visualizar apenas ela, ou 'Todas as lojas' para usar o filtro múltiplo abaixo"
+    )
 
-# Multiselect só é usado se "Todas as lojas" estiver selecionado
-if loja_especifica == "Todas as lojas":
-    lojas_sel = st.sidebar.multiselect("Filtrar por loja",
-                                       options=sorted([x for x in data["Loja"].dropna().unique()]),
-                                       default=sorted([x for x in data["Loja"].dropna().unique()]))
+    # Multiselect só é usado se "Todas as lojas" estiver selecionado
+    if loja_especifica == "Todas as lojas":
+        lojas_sel = st.sidebar.multiselect("Filtrar por loja",
+                                           options=sorted([x for x in data["Loja"].dropna().unique()]),
+                                           default=sorted([x for x in data["Loja"].dropna().unique()]))
+    else:
+        # Se uma loja específica foi selecionada, usar apenas ela
+        lojas_sel = [loja_especifica]
+        st.sidebar.info(f"Visualizando apenas: {loja_especifica}")
 else:
-    # Se uma loja específica foi selecionada, usar apenas ela
-    lojas_sel = [loja_especifica]
-    st.sidebar.info(f"Visualizando apenas: {loja_especifica}")
+    # Para usuários de loja, usar apenas a loja deles
+    regiao_sel = "Todos"  # Não aplica filtro de região
+    lojas_sel = [current_user['access_level']]  # Apenas a loja do usuário
+    st.sidebar.info(f"📍 Visualizando dados da loja: {current_user['access_level']}")
 
 setores_sel = st.sidebar.multiselect("Filtrar por setor",
                                      options=sorted([x for x in data["Setor"].dropna().unique()]),
