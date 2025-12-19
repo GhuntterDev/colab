@@ -44,7 +44,7 @@ universe_domain = "googleapis.com"
 ```
 
 3. **Compartilhe a planilha** com a service account:
-   - Email: `ghuntter@uplifted-water-472222-k7.iam.gserviceaccount.com`
+   - Email: `seu email`
    - Permissão: **Editor** (recomendado) ou **Leitor**
    - ⚠️ **IMPORTANTE**: Se aparecer erro de permissão, consulte `SOLUCAO_PERMISSAO.md`
 
